@@ -6,7 +6,7 @@ from app.core.auth import Role,require_roles
 from app.models.device import Device,DeviceType
 from app.schemas.device import DeviceCreate,DeviceRead,DeviceUpdate
 from app.api.dependencies import routeros_config
-from app.plugins.mikrotik.routeros_api import RouterOSError
+from app.plugins.mikrotik.routeros_api import RouterOSError,RouterOSConfig
 from app.services.mikrotik_service import MikroTikService
 from app.plugins.olt.snmp_poller import SNMPConfig,SNMPError,SNMPPoller
 import json
@@ -14,7 +14,7 @@ router=APIRouter(prefix="/api/v1/devices",tags=["devices"])
 def validate_live(b:DeviceCreate)->None:
  if not b.password: raise HTTPException(422,"Device credentials are required for live validation")
  if b.type==DeviceType.MIKROTIK:
-  try:MikroTikService(__import__("app.plugins.mikrotik.routeros_api",fromlist=["RouterOSConfig"]).RouterOSConfig(b.host,b.username or "",b.password,port=b.port or (8729 if b.tls else 8728),tls=b.tls)).test_connection()
+  try:MikroTikService(RouterOSConfig(b.host,b.username or "",b.password,port=b.port or (8729 if b.tls else 8728),tls=b.tls)).test_connection()
   except RouterOSError as e:raise HTTPException(502,f"MikroTik validation failed: {e}") from e
  elif b.type==DeviceType.OLT:
   try:
