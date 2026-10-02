@@ -13,6 +13,18 @@ def svc(id:int,db:Session):
  if not d:raise HTTPException(404,"Device not found")
  return MikroTikService(routeros_config(d))
 def fail(e):raise HTTPException(422 if isinstance(e,MikroTikValidationError) else 502,str(e))
+@router.get("/{id}/pppoe/secrets",dependencies=[Depends(require_roles(Role.ADMIN,Role.TECHNICIAN))])
+def secrets(id:int,db:Session=Depends(get_db)):
+ try:return svc(id,db).list_pppoe_secrets()
+ except RouterOSError as e:fail(e)
+@router.get("/{id}/pppoe/active",dependencies=[Depends(require_roles(Role.ADMIN,Role.TECHNICIAN))])
+def active(id:int,db:Session=Depends(get_db)):
+ try:return svc(id,db).list_active_sessions()
+ except RouterOSError as e:fail(e)
+@router.get("/{id}/connection",dependencies=[Depends(require_roles(Role.ADMIN,Role.TECHNICIAN))])
+def connection(id:int,db:Session=Depends(get_db)):
+ try:return svc(id,db).test_connection()
+ except RouterOSError as e:fail(e)
 @router.post("/{id}/pppoe/secrets",dependencies=[Depends(require_roles(Role.ADMIN,Role.TECHNICIAN))])
 def add(id:int,b:PPPoESecretCreate,db:Session=Depends(get_db)):
  try:return svc(id,db).add_pppoe_secret(PPPoESecret(b.username,b.password,b.profile,b.service,b.disabled,b.comment))
