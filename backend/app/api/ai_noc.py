@@ -29,7 +29,7 @@ def parse(command:str)->AIIntent:
 def audit(db,actor,role,intent,success,detail,target=None):
  a=AuditLog(actor=actor,role=role.value,action=intent.name,target=target,success=success,detail=detail[:4000] if detail else None);db.add(a);db.commit();db.refresh(a);return a.id
 @router.post("/command",response_model=AICommandResponse,dependencies=[Depends(require_roles(Role.ADMIN,Role.TECHNICIAN))])
-def command(body:AICommandRequest,db:Session=Depends(get_db),user:TokenData=Depends(current_user)):
+async def command(body:AICommandRequest,db:Session=Depends(get_db),user:TokenData=Depends(current_user)):
  intent=parse(body.command)
  if intent.name=="unknown":
   aid=audit(db,user.sub,user.role,intent,False,"Unsupported command")
@@ -51,7 +51,7 @@ def command(body:AICommandRequest,db:Session=Depends(get_db),user:TokenData=Depe
    required=["signal_oid","attenuation_oid","oper_status_oid","los_oid","dying_gasp_oid"]
    if any(k not in meta for k in required): raise HTTPException(400,"Device metadata must define signal_oid, attenuation_oid, oper_status_oid, los_oid and dying_gasp_oid")
    community=decrypt_secret(d.encrypted_password)
-   t=__import__("asyncio").run(SNMPPoller(SNMPConfig(d.host,community,port=d.port or 161)).poll_onu(*(meta[k] for k in required)))
+   t=await SNMPPoller(SNMPConfig(d.host,community,port=d.port or 161)).poll_onu(*(meta[k] for k in required))
    result={"device_id":d.id,"telemetry":t.__dict__,"fault":classify_fault(t)}
   aid=audit(db,user.sub,user.role,intent,True,"Command completed",str(intent.parameters))
   return AICommandResponse(intent=intent,success=True,result=result,message="Command completed",audit_id=aid)
