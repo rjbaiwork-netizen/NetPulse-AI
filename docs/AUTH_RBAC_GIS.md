@@ -13,4 +13,4 @@ The current bootstrap login is environment-backed. A production multi-operator d
 Devices persist `latitude` (-90..90) and `longitude` (-180..180). `GET /api/v1/devices` returns coordinates and the frontend map hydrates markers from that response. Existing databases require an Alembic migration because startup `create_all` does not alter existing tables.
 
 ## Frontend security
-The current cockpit stores the short-lived access token in `sessionStorage`. Production should use HTTPS, CSP/security headers, rate limiting, audit logging and a hardened session strategy.
+The cockpit stores the short-lived access token in `sessionStorage`, and protected pages redirect unauthenticated browser sessions to `/login`. Production should use HTTPS, CSP/security headers, rate limiting, audit logging and a hardened session strategy.
