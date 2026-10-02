@@ -22,6 +22,9 @@ class SNMPPoller:
   finally:
    close=getattr(engine,"closeDispatcher",None)
    if close:close()
+ async def test_connection(self)->dict[str,str]:
+  raw=await self.get("1.3.6.1.2.1.1.1.0")
+  return {"status":"connected","sys_descr":next(iter(raw.values()),"unknown")}
  async def poll_onu(self,signal_oid=None,attenuation_oid=None,oper_status_oid=None,los_oid=None,dying_gasp_oid=None):
   oids=[o for o in (signal_oid,attenuation_oid,oper_status_oid,los_oid,dying_gasp_oid) if o]; raw=await self.get(*oids)
   def s(o):return raw.get(o) if o else None
