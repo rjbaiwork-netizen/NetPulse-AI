@@ -1,0 +1,1 @@
+export function isAuthenticated(){return typeof window!=="undefined"&&Boolean(sessionStorage.getItem("netpulse_access_token"))}export function requireSession(router:{replace:(path:string)=>void}){if(!isAuthenticated())router.replace("/login")}
