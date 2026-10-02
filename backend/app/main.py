@@ -1,4 +1,10 @@
 from fastapi import FastAPI
-app=FastAPI(title="NetPulse-AI",version="0.1.0",description="Pure NMS & AI NOC backend.")
+from app.core.database import Base,engine
+from app.api.devices import router as devices_router
+from app.api.mikrotik import router as mikrotik_router
+from app.api.olt import router as olt_router
+app=FastAPI(title="NetPulse-AI",version="0.2.0",description="Pure NMS & AI NOC backend.")
+Base.metadata.create_all(bind=engine)
+app.include_router(devices_router);app.include_router(mikrotik_router);app.include_router(olt_router)
 @app.get("/health",tags=["system"])
-async def health()->dict[str,str]: return {"status":"ok","service":"netpulse-ai"}
+async def health():return {"status":"ok","service":"netpulse-ai"}
