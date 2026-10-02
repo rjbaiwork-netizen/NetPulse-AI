@@ -1,6 +1,7 @@
 from fastapi import APIRouter,Depends,HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+from app.core.auth import Role,require_roles
 from app.models.device import Device
 from app.api.dependencies import routeros_config
 from app.plugins.mikrotik.routeros_api import RouterOSError
@@ -12,15 +13,15 @@ def svc(id:int,db:Session):
  if not d:raise HTTPException(404,"Device not found")
  return MikroTikService(routeros_config(d))
 def fail(e):raise HTTPException(422 if isinstance(e,MikroTikValidationError) else 502,str(e))
-@router.post("/{id}/pppoe/secrets")
+@router.post("/{id}/pppoe/secrets",dependencies=[Depends(require_roles(Role.ADMIN,Role.TECHNICIAN))])
 def add(id:int,b:PPPoESecretCreate,db:Session=Depends(get_db)):
  try:return svc(id,db).add_pppoe_secret(PPPoESecret(b.username,b.password,b.profile,b.service,b.disabled,b.comment))
  except (MikroTikValidationError,RouterOSError) as e:fail(e)
-@router.post("/{id}/pppoe/speed")
+@router.post("/{id}/pppoe/speed",dependencies=[Depends(require_roles(Role.ADMIN,Role.TECHNICIAN))])
 def speed(id:int,b:SpeedProfileUpdate,db:Session=Depends(get_db)):
  try:return svc(id,db).set_speed_profile(b.username,b.download_bps,b.upload_bps)
  except (MikroTikValidationError,RouterOSError) as e:fail(e)
-@router.post("/{id}/pppoe/kick")
+@router.post("/{id}/pppoe/kick",dependencies=[Depends(require_roles(Role.ADMIN,Role.TECHNICIAN))])
 def kick(id:int,b:KickRequest,db:Session=Depends(get_db)):
  try:return {"removed_sessions":svc(id,db).kick_active_session(b.username)}
  except (MikroTikValidationError,RouterOSError) as e:fail(e)
