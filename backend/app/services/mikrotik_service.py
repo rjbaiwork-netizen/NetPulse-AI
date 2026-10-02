@@ -62,6 +62,19 @@ class MikroTikService:
             raise MikroTikValidationError(f"{field} must be a positive integer")
         return value
 
+    def list_pppoe_secrets(self) -> list[dict[str, str | list[str]]]:
+        with self._client() as client:
+            return client.execute("/ppp/secret/print")
+
+    def list_active_sessions(self) -> list[dict[str, str | list[str]]]:
+        with self._client() as client:
+            return client.execute("/ppp/active/print")
+
+    def test_connection(self) -> dict[str, str]:
+        with self._client() as client:
+            client.execute("/system/resource/print")
+        return {"status": "connected"}
+
     def add_pppoe_secret(self, secret: PPPoESecret) -> list[dict[str, str | list[str]]]:
         """Create a PPPoE secret without logging its password."""
         self._validate_name(secret.name, "PPPoE username")
