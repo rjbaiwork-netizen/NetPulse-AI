@@ -14,6 +14,17 @@ def poller(id:int,db:Session):
  try:c=decrypt_secret(d.encrypted_password)
  except Exception as e:raise HTTPException(500,"Stored SNMP credential cannot be decrypted") from e
  return SNMPPoller(SNMPConfig(d.host,c,port=d.port or 161))
+@router.get("/{id}/monitor",dependencies=[Depends(require_roles(Role.ADMIN,Role.TECHNICIAN))])
+async def monitor(id:int,db:Session=Depends(get_db)):
+ d=db.get(Device,id)
+ if not d or d.type!=DeviceType.OLT: raise HTTPException(404,"OLT device not found")
+ try:
+  meta=__import__("json").loads(d.metadata_json or "{}")
+  keys=("signal_oid","attenuation_oid","oper_status_oid","los_oid","dying_gasp_oid")
+  if not meta.get("signal_oid"): raise HTTPException(400,"OLT signal_oid is not configured")
+  t=await poller(id,db).poll_onu(*(meta.get(k) for k in keys))
+  return {"device_id":id,"telemetry":t.__dict__,"fault":classify_fault(t)}
+ except SNMPError as e: raise HTTPException(502,str(e))
 @router.post("/interface/status",dependencies=[Depends(require_roles(Role.ADMIN,Role.TECHNICIAN))])
 async def interface_status(b:OLTInterfaceRequest,db:Session=Depends(get_db)):
  try:return await poller(b.device_id,db).get(f"1.3.6.1.2.1.2.2.1.8.{b.interface_index}")
