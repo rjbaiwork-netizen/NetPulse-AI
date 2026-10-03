@@ -107,6 +107,7 @@ jobs:
         run: npm run build
 
       - name: Verify static export
+        working-directory: frontend
         run: test -f out/index.html
 
       - name: Configure GitHub Pages
