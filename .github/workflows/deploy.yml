@@ -85,16 +85,22 @@ jobs:
         working-directory: frontend
         run: npm install
 
-      - name: Validate frontend API configuration
+      - name: Resolve frontend API configuration
         working-directory: frontend
         env:
-          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NETPULSE_API_BASE_URL || format('https://{0}', secrets.NGROK_DOMAIN) }}
+          NETPULSE_API_BASE_URL: ${{ vars.NETPULSE_API_BASE_URL }}
         run: |
-          test -n "$NEXT_PUBLIC_API_BASE_URL"
-          case "$NEXT_PUBLIC_API_BASE_URL" in
+          if [ -z "$NETPULSE_API_BASE_URL" ]; then
+            echo "NETPULSE_API_BASE_URL is not configured."
+            echo "GitHub Pages is static and cannot host the FastAPI backend."
+            echo "For GitHub-only operation, run NetPulse-AI inside GitHub Codespaces."
+            exit 1
+          fi
+          case "$NETPULSE_API_BASE_URL" in
             http://*|https://*) ;;
-            *) echo "NEXT_PUBLIC_API_BASE_URL must start with http:// or https://"; exit 1 ;;
+            *) echo "NETPULSE_API_BASE_URL must start with http:// or https://"; exit 1 ;;
           esac
+          echo "NEXT_PUBLIC_API_BASE_URL=$NETPULSE_API_BASE_URL" >> "$GITHUB_ENV"
 
       - name: Build Next.js static export
         working-directory: frontend
