@@ -1,4 +1,4 @@
-import type {Alarm,Customer,CustomerLocation,Device,ONUPollRequest,ONUTelemetry} from "@/types/api";
+import type {Alarm,Customer,CustomerLocation,CustomerNetworkStatus,Device,ONUPollRequest,ONUTelemetry} from "@/types/api";
 export const BUILD_API_BASE_URL=(process.env.NEXT_PUBLIC_API_BASE_URL||"").replace(/\/$/,"");
 export function getApiBaseUrl():string{if(typeof window!=="undefined"){const runtime=localStorage.getItem("netpulse_api_base_url");if(runtime?.trim())return runtime.trim().replace(/\/$/,"")}return BUILD_API_BASE_URL}
 export class ApiError extends Error{constructor(public status:number,message:string){super(message)}}
@@ -11,6 +11,7 @@ createDevice:(body:Record<string,unknown>)=>request<Device>("/api/v1/devices",{m
 customers:(q?:string)=>request<Customer[]>("/api/v1/customers"+(q?"?q="+encodeURIComponent(q):"")),
 createCustomer:(body:Record<string,unknown>)=>request<Customer>("/api/v1/customers",{method:"POST",body:JSON.stringify(body)}),
 updateCustomer:(id:number,body:Record<string,unknown>)=>request<Customer>("/api/v1/customers/"+id,{method:"PATCH",body:JSON.stringify(body)}),
+customerNetworkStatus:(id:number)=>request<CustomerNetworkStatus>("/api/v1/customers/"+id+"/network-status"),
 customerLocations:(id:number)=>request<CustomerLocation[]>("/api/v1/customers/"+id+"/locations"),
 updateCustomerLocation:(id:number,body:Record<string,unknown>)=>request<CustomerLocation>("/api/v1/customers/"+id+"/location",{method:"POST",body:JSON.stringify(body)}),
 pppoeSecrets:(id:number)=>request<unknown[]>("/api/v1/mikrotik/"+id+"/pppoe/secrets"),
