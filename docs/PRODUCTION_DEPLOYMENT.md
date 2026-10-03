@@ -8,6 +8,18 @@ Recommended flow:
 
 `GitHub Pages -> HTTPS FastAPI -> PostgreSQL/SQLite -> MikroTik/OLT`
 
+## Persistent Render deployment
+
+The repository includes `render.yaml` for a persistent Docker + PostgreSQL deployment on Render. Render Blueprints can provision the web service and PostgreSQL database from the repository definition. citeturn0search0turn0search3
+
+1. Connect the repository to Render and create a Blueprint from `render.yaml`.
+2. Provide `NETPULSE_ADMIN_USERNAME` and a bcrypt `NETPULSE_ADMIN_PASSWORD_HASH` when prompted; do not commit them.
+3. Render provisions the PostgreSQL connection through `DATABASE_URL` and generates the encryption/JWT secrets.
+4. Wait for `/health` to become healthy and copy the HTTPS `onrender.com` service URL.
+5. Set GitHub repository variable `NETPULSE_API_BASE_URL` to that URL and let the Pages workflow rebuild the frontend.
+
+This is the intended persistent backend path. Codespaces/ngrok remains suitable for temporary development only.
+
 ## Backend container
 
 Build from `backend/`:
