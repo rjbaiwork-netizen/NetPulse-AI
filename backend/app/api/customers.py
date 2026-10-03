@@ -6,6 +6,9 @@ from app.core.database import get_db
 from app.models.customer import Customer, CustomerLocation
 from app.models.device import Device
 from app.schemas.customer import CustomerCreate, CustomerLocationCreate, CustomerLocationRead, CustomerRead, CustomerUpdate
+from app.api.dependencies import routeros_config
+from app.services.mikrotik_service import MikroTikService
+from app.plugins.mikrotik.routeros_api import RouterOSError
 router = APIRouter(prefix="/api/v1/customers", tags=["customers"])
 def _validate_device(device_id: int | None, db: Session) -> None:
     if device_id is not None and not db.get(Device, device_id):
@@ -58,3 +61,18 @@ def update_customer_location(customer_id: int, body: CustomerLocationCreate, db:
 def customer_location_history(customer_id: int, limit: int = Query(default=100, ge=1, le=1000), db: Session = Depends(get_db)):
     if not db.get(Customer, customer_id): raise HTTPException(404, "Customer not found")
     return db.query(CustomerLocation).filter(CustomerLocation.customer_id == customer_id).order_by(CustomerLocation.captured_at.desc()).limit(limit).all()
+
+@router.get("/{customer_id}/network-status", dependencies=[Depends(require_roles(Role.ADMIN, Role.TECHNICIAN))])
+def customer_network_status(customer_id: int, db: Session = Depends(get_db)):
+    customer = db.get(Customer, customer_id)
+    if not customer: raise HTTPException(404, "Customer not found")
+    if not customer.device_id or not customer.pppoe_username:
+        return {"customer_id": customer_id, "pppoe_username": customer.pppoe_username, "device_id": customer.device_id, "connected": False, "sessions": [], "reason": "PPPoE username and linked MikroTik are required"}
+    device = db.get(Device, customer.device_id)
+    if not device: raise HTTPException(422, "Linked device not found")
+    try:
+        rows = MikroTikService(routeros_config(device)).list_active_sessions()
+    except RouterOSError as e:
+        raise HTTPException(502, f"MikroTik query failed: {e}")
+    matches = [row for row in rows if str(row.get("name", "")) == customer.pppoe_username]
+    return {"customer_id": customer_id, "pppoe_username": customer.pppoe_username, "device_id": customer.device_id, "connected": bool(matches), "session_count": len(matches), "sessions": matches}
