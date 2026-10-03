@@ -17,9 +17,9 @@ concurrency:
 
 jobs:
   backend:
-    name: FastAPI - Validate and Live Tunnel
+    name: FastAPI - GitHub Actions Validation
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: backend
@@ -63,35 +63,6 @@ jobs:
           done
           cat /tmp/netpulse-backend.log
           exit 1
-
-      - name: Install ngrok
-        working-directory: .
-        run: |
-          curl -fsSL https://bin.ngrok.com/c/bNyj1mQV4c/ngrok-v3-stable-linux-amd64.tgz | tar -xz
-          sudo mv ngrok /usr/local/bin/ngrok
-          ngrok version
-
-      - name: Start and verify public backend
-        working-directory: .
-        run: |
-          test -n "$NGROK_AUTHTOKEN"
-          test -n "$NGROK_DOMAIN"
-          ngrok config add-authtoken "$NGROK_AUTHTOKEN"
-          nohup ngrok http 8000 --url "https://$NGROK_DOMAIN" > /tmp/netpulse-ngrok.log 2>&1 &
-          for i in {1..30}; do
-            if curl --fail --silent --show-error "https://$NGROK_DOMAIN/health"; then
-              echo
-              echo "NetPulse-AI public backend is reachable at https://$NGROK_DOMAIN"
-              exit 0
-            fi
-            sleep 2
-          done
-          cat /tmp/netpulse-ngrok.log
-          exit 1
-
-      - name: Keep live tunnel running
-        working-directory: .
-        run: tail -f /tmp/netpulse-ngrok.log
 
   frontend:
     name: Next.js - Build and GitHub Pages Deploy
