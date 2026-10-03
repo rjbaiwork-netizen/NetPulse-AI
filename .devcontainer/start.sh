@@ -26,7 +26,10 @@ fi
 
 # Start FastAPI only if port 8000 is not already serving.
 if ! (echo >/dev/tcp/127.0.0.1/8000) >/dev/null 2>&1; then
-  nohup python -m uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 >"$BACKEND_LOG" 2>&1 &
+  (
+    cd "$ROOT/backend"
+    nohup python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 >"$BACKEND_LOG" 2>&1 &
+  )
 fi
 
 # Start the Next.js development server only if port 3000 is not already serving.
