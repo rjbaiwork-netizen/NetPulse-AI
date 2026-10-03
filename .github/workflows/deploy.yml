@@ -52,6 +52,10 @@ jobs:
       - name: Database migration
         run: alembic -c ../alembic.ini upgrade head
 
+      - name: Build production backend image
+        working-directory: .
+        run: docker build -t netpulse-ai-backend:ci ./backend
+
       - name: Start FastAPI and verify local health
         run: |
           nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/netpulse-backend.log 2>&1 &
