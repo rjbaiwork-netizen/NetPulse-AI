@@ -116,6 +116,17 @@ jobs:
         working-directory: frontend
         run: npm install
 
+      - name: Validate frontend API configuration
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NETPULSE_API_BASE_URL || format('https://{0}', secrets.NGROK_DOMAIN) }}
+        run: |
+          test -n "$NEXT_PUBLIC_API_BASE_URL"
+          case "$NEXT_PUBLIC_API_BASE_URL" in
+            http://*|https://*) ;;
+            *) echo "NEXT_PUBLIC_API_BASE_URL must start with http:// or https://"; exit 1 ;;
+          esac
+
       - name: Build Next.js static export
         working-directory: frontend
         env:
