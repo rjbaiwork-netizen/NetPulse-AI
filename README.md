@@ -24,22 +24,22 @@ This is the bootstrap foundation; production hardening, authentication, persiste
 
 ## GitHub-only operation
 
-NetPulse-AI is configured for repeatable GitHub Codespaces development. The repository's `.devcontainer/devcontainer.json` automatically installs backend and frontend dependencies, forwards ports **3000** and **8000**, and starts FastAPI plus the Next.js development server when the Codespace starts. GitHub supports `postCreateCommand` for setup after container creation and `postStartCommand` for commands each time the container starts. citeturn1search0turn1search1
+NetPulse-AI is configured for repeatable GitHub Codespaces development. The repository's `.devcontainer/devcontainer.json` automatically installs backend and frontend dependencies, forwards ports **3000** and **8000**, and starts FastAPI plus the Next.js development server when the Codespace starts. GitHub supports `postCreateCommand` for setup after container creation and `postStartCommand` for commands each time the container starts.
 
 After creating or rebuilding the Codespace, the services are started automatically:
 
 - FastAPI: `https://<CODESPACE_NAME>-8000.<GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN>/health`
 - Next.js: `https://<CODESPACE_NAME>-3000.<GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN>`
 
-GitHub supplies `CODESPACE_NAME` and `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`, so the configuration does not hardcode a Codespaces hostname. citeturn2search0
+GitHub supplies `CODESPACE_NAME` and `GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`, so the configuration does not hardcode a Codespaces hostname.
 
 ### First-time setup
 
 1. Open the repository in GitHub Codespaces.
-2. If the Codespace already existed before this configuration was committed, run **Codespaces: Rebuild Container** so the new lifecycle configuration is applied. citeturn1search6
+2. If the Codespace already existed before this configuration was committed, run **Codespaces: Rebuild Container** so the new lifecycle configuration is applied.
 3. Wait for the post-create installation to finish.
 4. Open **Ports** and confirm ports **3000** and **8000** are forwarded.
-5. For GitHub Pages or any external browser client to reach FastAPI, change port **8000** visibility to **Public**. Forwarded ports are private by default. citeturn2search4turn2search3
+5. For GitHub Pages or any external browser client to reach FastAPI, change port **8000** visibility to **Public**. Forwarded ports are private by default.
 6. Use the displayed 8000 URL as the backend URL. The Codespaces startup script also derives the same URL automatically for the Next.js runtime configuration.
 
 ### Authentication secrets
