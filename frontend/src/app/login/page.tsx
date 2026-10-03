@@ -1,1 +1,41 @@
-"use client";import {FormEvent,useState} from "react";import {useRouter} from "next/navigation";import {api} from "@/services/api";export default function Login(){const router=useRouter();const[u,setU]=useState(""),[p,setP]=useState(""),[e,setE]=useState(""),[busy,setBusy]=useState(false);async function submit(ev:FormEvent){ev.preventDefault();setBusy(true);setE("");try{const r=await api.login(u,p);sessionStorage.setItem("netpulse_access_token",r.access_token);sessionStorage.setItem("netpulse_role",r.role);router.replace("/dashboard")}catch(x){setE(x instanceof Error?x.message:"Authentication failed")}finally{setBusy(false)}}return <main className="flex min-h-screen items-center justify-center bg-slate-950 p-5"><form onSubmit={submit} className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-7 shadow-2xl"><p className="text-xs font-semibold uppercase tracking-[.3em] text-cyan-400">NetPulse-AI</p><h1 className="mt-3 text-3xl font-bold">Operator Login</h1><p className="mt-2 text-sm text-slate-400">Authenticate before entering the NOC cockpit.</p>{e&&<div className="mt-5 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{e}</div>}<label className="mt-6 block text-sm text-slate-300">Username<input required value={u} onChange={x=>setU(x.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-500"/></label><label className="mt-4 block text-sm text-slate-300">Password<input required minLength={8} type="password" value={p} onChange={x=>setP(x.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-500"/></label><button disabled={busy} className="mt-6 w-full rounded-xl bg-cyan-500 py-3 font-semibold text-slate-950 disabled:opacity-50">{busy?"Authenticating…":"Sign in"}</button></form></main>}
+"use client";
+import {FormEvent,useState} from "react";
+import {useRouter} from "next/navigation";
+import {api,getApiBaseUrl} from "@/services/api";
+
+export default function Login(){
+  const router=useRouter();
+  const[u,setU]=useState(""),[p,setP]=useState(""),[e,setE]=useState(""),[busy,setBusy]=useState(false);
+  const[backendUrl,setBackendUrl]=useState(()=>getApiBaseUrl());
+  function saveBackendUrl(){
+    const value=backendUrl.trim().replace(/\/$/,"");
+    if(typeof window!=="undefined") localStorage.setItem("netpulse_api_base_url",value);
+    setBackendUrl(value);
+    setE("");
+  }
+  async function submit(ev:FormEvent){
+    ev.preventDefault();
+    saveBackendUrl();
+    setBusy(true);setE("");
+    try{const r=await api.login(u,p);sessionStorage.setItem("netpulse_access_token",r.access_token);sessionStorage.setItem("netpulse_role",r.role);router.replace("/dashboard")}
+    catch(x){setE(x instanceof Error?x.message:"Authentication failed")}
+    finally{setBusy(false)}
+  }
+  return <main className="flex min-h-screen items-center justify-center bg-slate-950 p-5"><form onSubmit={submit} className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-7 shadow-2xl">
+    <p className="text-xs font-semibold uppercase tracking-[.3em] text-cyan-400">NetPulse-AI</p>
+    <h1 className="mt-3 text-3xl font-bold">Operator Login</h1>
+    <p className="mt-2 text-sm text-slate-400">Authenticate before entering the NOC cockpit.</p>
+    {e&&<div className="mt-5 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{e}</div>}
+    <label className="mt-6 block text-sm text-slate-300">FastAPI Backend URL
+      <input required type="url" value={backendUrl} onChange={x=>setBackendUrl(x.target.value)} onBlur={saveBackendUrl} placeholder="https://your-codespace-8000.app.github.dev" className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-500"/>
+    </label>
+    <label className="mt-4 block text-sm text-slate-300">Username
+      <input required value={u} onChange={x=>setU(x.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-500"/>
+    </label>
+    <label className="mt-4 block text-sm text-slate-300">Password
+      <input required minLength={8} type="password" value={p} onChange={x=>setP(x.target.value)} className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 outline-none focus:border-cyan-500"/>
+    </label>
+    <button disabled={busy} className="mt-6 w-full rounded-xl bg-cyan-500 py-3 font-semibold text-slate-950 disabled:opacity-50">{busy?"Authenticating…":"Sign in"}</button>
+    <p className="mt-4 text-xs text-slate-500">GitHub Pages hosts the UI. For GitHub-only operation, run FastAPI in GitHub Codespaces and paste its forwarded port 8000 URL here.</p>
+  </form></main>
+}
