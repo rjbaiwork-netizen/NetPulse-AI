@@ -30,8 +30,6 @@ jobs:
       NETPULSE_ADMIN_USERNAME: ${{ secrets.NETPULSE_ADMIN_USERNAME }}
       NETPULSE_ADMIN_PASSWORD_HASH: ${{ secrets.NETPULSE_ADMIN_PASSWORD_HASH }}
       NETPULSE_CORS_ORIGINS: ${{ vars.NETPULSE_CORS_ORIGINS || 'https://rjbaiwork-netizen.github.io,http://localhost:3000' }}
-      NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
-      NGROK_DOMAIN: ${{ secrets.NGROK_DOMAIN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
