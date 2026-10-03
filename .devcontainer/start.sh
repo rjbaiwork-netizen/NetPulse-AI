@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="/workspaces/NetPulse-AI"
+ROOT="$(git -C "$(dirname "$0")/.." rev-parse --show-toplevel)"
 BACKEND_LOG="/tmp/netpulse-backend.log"
 FRONTEND_LOG="/tmp/netpulse-frontend.log"
 
