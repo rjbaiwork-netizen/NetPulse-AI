@@ -6,6 +6,10 @@ on:
     branches: [main]
 jobs:
   backend:
+    env:
+      DATABASE_URL: sqlite:///./ci.db
+      NETPULSE_ENCRYPTION_KEY: ci-only-encryption-key
+      NETPULSE_JWT_SECRET: ci-only-jwt-secret
     runs-on: ubuntu-latest
     defaults: {run: {working-directory: backend}}
     steps:
@@ -17,6 +21,8 @@ jobs:
       - run: alembic -c ../alembic.ini upgrade head
       - run: python -m pytest -q
   frontend:
+    env:
+      NEXT_PUBLIC_API_BASE_URL: http://127.0.0.1:8000
     runs-on: ubuntu-latest
     defaults: {run: {working-directory: frontend}}
     steps:
