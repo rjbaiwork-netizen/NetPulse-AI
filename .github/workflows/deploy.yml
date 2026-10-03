@@ -56,16 +56,26 @@ jobs:
         working-directory: .
         run: docker build -t netpulse-ai-backend:ci ./backend
 
-      - name: Start FastAPI and verify local health
+      - name: Run production container and verify health
+        working-directory: .
         run: |
-          nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/netpulse-backend.log 2>&1 &
-          for i in {1..30}; do
+          docker run -d --name netpulse-ai-backend-ci -p 8000:8000 \
+            -e DATABASE_URL=sqlite:///./netpulse-ci.db \
+            -e NETPULSE_ENCRYPTION_KEY=ci-only-encryption-key \
+            -e NETPULSE_JWT_SECRET=ci-only-jwt-secret \
+            -e NETPULSE_ADMIN_USERNAME=ci-admin \
+            -e NETPULSE_ADMIN_PASSWORD_HASH='$2b$12$C6UzMDM.H6dfI/f/IKcEe.' \
+            -e NETPULSE_CORS_ORIGINS=http://localhost:3000 \
+            netpulse-ai-backend:ci
+          for i in {1..45}; do
             if curl --fail --silent http://127.0.0.1:8000/health; then
+              docker rm -f netpulse-ai-backend-ci
               exit 0
             fi
             sleep 2
           done
-          cat /tmp/netpulse-backend.log
+          docker logs netpulse-ai-backend-ci
+          docker rm -f netpulse-ai-backend-ci
           exit 1
 
   frontend:
