@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: netpulse-production
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   backend:
@@ -29,7 +29,7 @@ jobs:
       NETPULSE_JWT_SECRET: ${{ secrets.NETPULSE_JWT_SECRET }}
       NETPULSE_ADMIN_USERNAME: ${{ secrets.NETPULSE_ADMIN_USERNAME }}
       NETPULSE_ADMIN_PASSWORD_HASH: ${{ secrets.NETPULSE_ADMIN_PASSWORD_HASH }}
-      NETPULSE_CORS_ORIGINS: https://rjbaiwork-netizen.github.io,http://localhost:3000
+      NETPULSE_CORS_ORIGINS: ${{ vars.NETPULSE_CORS_ORIGINS || 'https://rjbaiwork-netizen.github.io,http://localhost:3000' }}
       NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
       NGROK_DOMAIN: ${{ secrets.NGROK_DOMAIN }}
     steps:
@@ -54,7 +54,7 @@ jobs:
       - name: Database migration
         run: alembic -c ../alembic.ini upgrade head
 
-      - name: Start FastAPI and verify health
+      - name: Start FastAPI and verify local health
         run: |
           nohup uvicorn app.main:app --host 0.0.0.0 --port 8000 > /tmp/netpulse-backend.log 2>&1 &
           for i in {1..30}; do
@@ -73,17 +73,34 @@ jobs:
           sudo mv ngrok /usr/local/bin/ngrok
           ngrok version
 
-      - name: Start live public backend
+      - name: Start and verify public backend
+        working-directory: .
         run: |
           test -n "$NGROK_AUTHTOKEN"
           test -n "$NGROK_DOMAIN"
           ngrok config add-authtoken "$NGROK_AUTHTOKEN"
-          echo "NetPulse-AI backend: https://$NGROK_DOMAIN"
-          ngrok http 8000 --url "https://$NGROK_DOMAIN"
+          nohup ngrok http 8000 --url "https://$NGROK_DOMAIN" > /tmp/netpulse-ngrok.log 2>&1 &
+          for i in {1..30}; do
+            if curl --fail --silent --show-error "https://$NGROK_DOMAIN/health"; then
+              echo
+              echo "NetPulse-AI public backend is reachable at https://$NGROK_DOMAIN"
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/netpulse-ngrok.log
+          exit 1
+
+      - name: Keep live tunnel running
+        working-directory: .
+        run: tail -f /tmp/netpulse-ngrok.log
 
   frontend:
     name: Next.js - Build and GitHub Pages Deploy
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -99,7 +116,7 @@ jobs:
         working-directory: frontend
         run: npm install
 
-      - name: Build Next.js
+      - name: Build Next.js static export
         working-directory: frontend
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ vars.NETPULSE_API_BASE_URL || format('https://{0}', secrets.NGROK_DOMAIN) }}
@@ -108,18 +125,36 @@ jobs:
 
       - name: Verify static export
         working-directory: frontend
-        run: test -f out/index.html
+        run: |
+          test -f out/index.html
+          test -f out/login/index.html
+          test -f out/dashboard/index.html
+          test -f out/devices/index.html
+          test -f out/map/index.html
+          test -f out/ai-noc/index.html
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
           path: frontend/out
 
-      - name: Deploy GitHub Pages
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify deployed Pages site
+        working-directory: .
+        run: |
+          test -n "${{ steps.deployment.outputs.page_url }}"
+          for i in {1..30}; do
+            if curl --fail --silent --show-error --location "${{ steps.deployment.outputs.page_url }}"; then
+              echo
+              echo "GitHub Pages deployment is reachable."
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
