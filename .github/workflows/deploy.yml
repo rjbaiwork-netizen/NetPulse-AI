@@ -113,6 +113,8 @@ jobs:
           test -f out/devices/index.html
           test -f out/map/index.html
           test -f out/ai-noc/index.html
+          test -f out/customers/index.html
+          test -f out/customers/profile/index.html
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
