@@ -3,7 +3,16 @@
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
   "forwardPorts": [3000, 8000],
   "portsAttributes": {
-    "3000": {"label": "NetPulse-AI Frontend", "onAutoForward": "openPreview"},
-    "8000": {"label": "NetPulse-AI FastAPI", "onAutoForward": "notify"}
-  }
+    "3000": {
+      "label": "NetPulse-AI Frontend",
+      "onAutoForward": "openPreview"
+    },
+    "8000": {
+      "label": "NetPulse-AI FastAPI",
+      "onAutoForward": "notify"
+    }
+  },
+  "postCreateCommand": "python -m pip install --upgrade pip && python -m pip install -r backend/requirements.txt && cd frontend && npm install",
+  "postStartCommand": "bash .devcontainer/start.sh",
+  "waitFor": "postCreateCommand"
 }
